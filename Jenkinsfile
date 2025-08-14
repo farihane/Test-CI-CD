@@ -2,42 +2,54 @@ pipeline {
     agent any
 
     environment {
-        // dossier workspace partagé pour Docker Maven
-        WORKSPACE_DIR = "${env.WORKSPACE}"
+        DOCKER_IMAGE = "springboot-app"
+        MAVEN_IMAGE = "maven:3.9.4-eclipse-temurin-21"
     }
 
     stages {
         stage('Checkout') {
             steps {
+                echo "📥 Cloning repository..."
                 git branch: 'main', url: 'https://github.com/farihane/Test-CI-CD.git'
             }
         }
 
         stage('Build with Maven in Docker') {
             steps {
-                script {
-                    // Utiliser l'image Maven officielle avec JDK
-                    docker.image('maven:3.9.4-eclipse-temurin-21').inside("-v ${WORKSPACE_DIR}:${WORKSPACE_DIR}") {
-                        sh "cd ${WORKSPACE_DIR} && mvn clean package -DskipTests"
-                    }
-                }
+                echo "🔨 Building with Maven inside Docker..."
+                sh """
+                    docker run --rm \
+                        -v \$PWD:/app \
+                        -w /app \
+                        ${MAVEN_IMAGE} mvn clean package -DskipTests
+                """
             }
         }
 
-        stage('Docker Build & Run App') {
+        stage('Build Docker Image') {
             steps {
-                script {
-                    // Construire l'image Docker de l'application
-                    docker.build("springboot-app:${env.BUILD_NUMBER}", "${WORKSPACE_DIR}")
-                    // Optionnel : lancer le conteneur
-                    // docker.image("springboot-app:${env.BUILD_NUMBER}").run('-p 8080:8080')
-                }
+                echo "🐳 Building Docker image..."
+                sh "docker build -t ${DOCKER_IMAGE} ."
+            }
+        }
+
+        stage('Run Docker Container') {
+            steps {
+                echo "🚀 Running application container..."
+                sh """
+                    docker rm -f ${DOCKER_IMAGE} || true
+                    docker run -d --name ${DOCKER_IMAGE} -p 8080:8080 ${DOCKER_IMAGE}
+                """
             }
         }
     }
 
     post {
-        success { echo '✅ Pipeline terminé avec succès !' }
-        failure { echo '❌ Pipeline échoué !' }
+        success {
+            echo "✅ Pipeline completed successfully!"
+        }
+        failure {
+            echo "❌ Pipeline failed!"
+        }
     }
 }
