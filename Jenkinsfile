@@ -10,11 +10,15 @@ pipeline {
         }
 
         stage('Build with Maven') {
+            agent {
+                docker {
+                    image 'maven:3.9.4-eclipse-temurin-21'
+                    args '-v /var/jenkins_home/.m2:/root/.m2'
+                }
+            }
             steps {
                 echo '🔨 Building the project with Maven inside Docker...'
-                docker.image('maven:3.9.4-eclipse-temurin-21').inside {
-                    sh 'mvn clean package -DskipTests'
-                }
+                sh 'mvn clean package -DskipTests'
             }
         }
 
