@@ -1,14 +1,16 @@
 pipeline {
     agent any
+
     stages {
         stage('Build') {
             steps {
-                sh 'docker build -t backend-cicd-demo:latest .'
+                echo 'Building...'
             }
         }
-        stage('Deploy') {
+
+        stage('Test') {
             steps {
-                sh 'kubectl apply -f k8s-deployment.yaml'
+                echo 'Testing...'
             }
         }
     }
