@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     environment {
-        // Nom de l'image Docker finale
         IMAGE_NAME = "springboot-app:latest"
     }
 
@@ -14,21 +13,12 @@ pipeline {
             }
         }
 
-        stage('Detect Java Version') {
+        stage('Build & Package in Docker') {
             steps {
                 script {
-                    // Lire la version Java depuis le pom.xml
-                    javaVersion = sh(script: "mvn help:evaluate -Dexpression=maven.compiler.source -q -DforceStdout", returnStdout: true).trim()
-                    echo "🔍 Version Java détectée : ${javaVersion}"
-                }
-            }
-        }
-
-        stage('Build with Maven in Docker') {
-            steps {
-                script {
-                    echo "🔨 Build Maven dans Docker avec Java ${javaVersion}..."
-                    docker.image("maven:3.9.2-jdk${javaVersion}").inside {
+                    echo "🔨 Build Maven dans Docker..."
+                    // Tout se fait dans le conteneur Maven, pas besoin de Java/Maven sur Jenkins
+                    docker.image('maven:3.9.2-jdk21').inside {
                         sh 'mvn clean package -DskipTests'
                     }
                 }
@@ -48,6 +38,8 @@ pipeline {
             steps {
                 script {
                     echo "🚀 Lancement de l'application dans Docker..."
+                    // Supprime le conteneur existant si présent
+                    sh "docker rm -f springboot-app || true"
                     sh "docker run -d -p 8080:8080 --name springboot-app ${IMAGE_NAME}"
                 }
             }
@@ -59,7 +51,7 @@ pipeline {
             echo "✅ Pipeline terminé avec succès !"
         }
         failure {
-            echo "❌ Pipeline échoué. Vérifie les logs !"
+            echo "❌ Pipeline échoué, vérifie les logs !"
         }
     }
 }
