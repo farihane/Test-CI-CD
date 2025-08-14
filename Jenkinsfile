@@ -2,32 +2,35 @@ pipeline {
     agent any
 
     environment {
-        // Nom de l'image Maven + JDK à utiliser
-        MAVEN_IMAGE = 'maven:3.9.2-jdk21'
+        // Nom de l'image Maven avec JDK 21
+        MAVEN_IMAGE = 'maven:3.9.2-eclipse-temurin-21'
     }
 
     stages {
+
         stage('Checkout') {
             steps {
-                echo "📥 Clonage du repository depuis GitHub..."
+                echo "📥 Cloning repository..."
                 git branch: 'main', url: 'https://github.com/farihane/Test-CI-CD.git'
             }
         }
 
-        stage('Build with Maven in Docker') {
+        stage('Build with Docker Maven') {
             steps {
-                echo "🔨 Build du projet avec Maven dans Docker..."
+                echo "🔨 Building project inside Docker container..."
                 script {
-                    docker.image(env.MAVEN_IMAGE).inside('-v ${WORKSPACE}:/app -w /app') {
-                        sh 'mvn clean package -DskipTests'
-                    }
+                    // Exécuter Maven dans Docker
+                    def mvnCommand = "mvn clean package -DskipTests"
+                    bat """
+                    docker run --rm -v "%CD%":/app -w /app ${MAVEN_IMAGE} ${mvnCommand}
+                    """
                 }
             }
         }
 
         stage('Success') {
             steps {
-                echo "✅ Build terminé avec succès !"
+                echo "✅ Build finished successfully!"
             }
         }
     }
