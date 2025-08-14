@@ -2,56 +2,39 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "springboot-app:latest"
+        // Nom de l'image Maven + JDK à utiliser
+        MAVEN_IMAGE = 'maven:3.9.2-jdk21'
     }
 
     stages {
         stage('Checkout') {
             steps {
-                echo '📥 Récupération du code depuis GitHub...'
+                echo "📥 Clonage du repository depuis GitHub..."
                 git branch: 'main', url: 'https://github.com/farihane/Test-CI-CD.git'
             }
         }
 
-        stage('Build & Package in Docker') {
+        stage('Build with Maven in Docker') {
             steps {
+                echo "🔨 Build du projet avec Maven dans Docker..."
                 script {
-                    echo "🔨 Build Maven dans Docker..."
-                    // Tout se fait dans le conteneur Maven, pas besoin de Java/Maven sur Jenkins
-                    docker.image('maven:3.9.2-jdk21').inside {
+                    docker.image(env.MAVEN_IMAGE).inside('-v ${WORKSPACE}:/app -w /app') {
                         sh 'mvn clean package -DskipTests'
                     }
                 }
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Success') {
             steps {
-                script {
-                    echo "🐳 Création de l'image Docker..."
-                    sh "docker build -t ${IMAGE_NAME} ."
-                }
-            }
-        }
-
-        stage('Run App') {
-            steps {
-                script {
-                    echo "🚀 Lancement de l'application dans Docker..."
-                    // Supprime le conteneur existant si présent
-                    sh "docker rm -f springboot-app || true"
-                    sh "docker run -d -p 8080:8080 --name springboot-app ${IMAGE_NAME}"
-                }
+                echo "✅ Build terminé avec succès !"
             }
         }
     }
 
     post {
-        success {
-            echo "✅ Pipeline terminé avec succès !"
-        }
         failure {
-            echo "❌ Pipeline échoué, vérifie les logs !"
+            echo "❌ Pipeline échoué !"
         }
     }
 }
