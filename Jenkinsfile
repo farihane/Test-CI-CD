@@ -1,6 +1,3 @@
-// Jenkinsfile pour un projet Spring Boot + Docker
-// Chaque étape est commentée pour bien comprendre le pipeline
-
 pipeline {
     // Définition de l'agent : où la pipeline va s'exécuter
     // Ici, on utilise un container Docker Maven officiel avec Java 21
@@ -70,7 +67,7 @@ pipeline {
             echo "Pipeline réussie !"
         }
         failure {
-            echo "Pipeline échouée, vérifier les logs."
+            echo "Pipeline échouée, vérifier les logsssssssssss."
         }
     }
 }
