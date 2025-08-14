@@ -1,27 +1,26 @@
 pipeline {
-    agent {
-        docker {
-            image 'maven:3.9.6-eclipse-temurin-17'
-            args '-v /var/run/docker.sock:/var/run/docker.sock'
-        }
-    }
+    agent any
     stages {
         stage('Checkout') {
             steps {
                 git branch: 'main', url: 'https://github.com/farihane/Test-CI-CD.git'
             }
         }
-        stage('Build') {
+        stage('Build in Docker') {
             steps {
-                sh 'mvn clean package -DskipTests'
+                bat '''
+                docker run --rm -v "%CD%":/app -w /app maven:3.9.6-eclipse-temurin-17 mvn clean package -DskipTests
+                '''
+            }
+        }
+        stage('Build Docker Image') {
+            steps {
+                bat 'docker build -t springboot-app .'
             }
         }
         stage('Run App') {
             steps {
-                sh '''
-                    docker build -t springboot-app .
-                    docker run -d -p 8080:8080 springboot-app
-                '''
+                bat 'docker run -d -p 8080:8080 springboot-app'
             }
         }
     }
