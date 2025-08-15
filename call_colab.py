@@ -2,17 +2,12 @@ import requests
 
 GENAI_URL = "https://c55b2ab2da49.ngrok-free.app/hello"
 
-# GET
-response = requests.get(GENAI_URL)
-try:
-    print("Message from Colab (GET):", response.json())
-except ValueError:
-    print("GET Response is not JSON:", response.text)
+logs_data = {
+    "logs": "Exemple de log de build Jenkins..."
+}
 
-# POST
-data = {"message": "Hello from Jenkins!"}
-response = requests.post(GENAI_URL, json=data)
+response = requests.post(GENAI_URL, json=logs_data)
 try:
-    print("Message from Jenkins (POST):", response.json())
+    print("Réponse Colab:", response.json())
 except ValueError:
-    print("POST Response is not JSON:", response.text)
+    print("Erreur JSON, réponse brute:", response.text)
