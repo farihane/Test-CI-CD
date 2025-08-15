@@ -8,11 +8,11 @@ pipeline {
             }
         }
 
-        stage('Build with Docker Maven') {
+        stage('Build') {
             steps {
                 script {
-                    // Image Maven/Java fixe pour éviter les surprises
-                    def mavenImage = "maven:3.9.2-eclipse-temurin-21"
+                    // Image Maven/Java EXISTANTE sur Docker Hub
+                    def mavenImage = "maven:3.9.6-eclipse-temurin-21"
 
                     echo "Utilisation de l'image Maven : ${mavenImage}"
 
@@ -27,12 +27,6 @@ pipeline {
                         ${mavenImage} mvn clean package -DskipTests
                     """
                 }
-            }
-        }
-
-        stage('Archive JAR') {
-            steps {
-                archiveArtifacts artifacts: '**/target/*.jar', fingerprint: true
             }
         }
     }
