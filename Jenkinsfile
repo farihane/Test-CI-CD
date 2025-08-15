@@ -8,17 +8,14 @@ pipeline {
             }
         }
 
-        stage('Build') {
+        stage('Build Maven & Package') {
             steps {
                 script {
-                    // Image Maven/Java fonctionnelle
                     def mavenImage = "maven:3.9.6-eclipse-temurin-21"
-                    echo "Utilisation de l'image Maven : ${mavenImage}"
+                    echo "Build Maven avec l'image Docker : ${mavenImage}"
 
-                    // Pull de l'image Docker
                     bat "docker pull ${mavenImage}"
 
-                    // Build du projet Maven dans Docker
                     bat """
                         docker run --rm ^
                         -v %CD%:/app ^
@@ -29,21 +26,27 @@ pipeline {
             }
         }
 
-        stage('Archive JAR') {
+        stage('Build Docker Image') {
             steps {
-                archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+                script {
+                    def imageName = "springboot-demo:latest"
+                    echo "Construction de l'image Docker : ${imageName}"
+
+                    bat "docker build -t ${imageName} ."
+                }
             }
         }
 
-        stage('Run Application (Optional)') {
+        stage('Run Application') {
             steps {
                 script {
-                    echo "Test de l'application dans Docker sur le port 8080"
-                    bat """
-                        docker run --rm -d -p 8080:8080 ^
-                        -v %CD%/target:/app maven:3.9.6-eclipse-temurin-21 ^
-                        java -jar /app/backend-cicd-demo-0.0.1-SNAPSHOT.jar
-                    """
+                    def containerName = "springboot-demo-container"
+
+                    // Arrêter et supprimer le conteneur existant si présent
+                    bat "docker rm -f ${containerName} || exit 0"
+
+                    // Lancer le conteneur
+                    bat "docker run -d -p 8080:8080 --name ${containerName} springboot-demo:latest"
                 }
             }
         }
@@ -51,10 +54,10 @@ pipeline {
 
     post {
         success {
-            echo "✅ Build terminé avec succès !"
+            echo "✅ Application déployée avec succès dans Docker !"
         }
         failure {
-            echo "❌ Build échoué"
+            echo "❌ Build ou déploiement échoué !"
         }
     }
 }
