@@ -2,12 +2,10 @@ pipeline {
   agent any
 
   environment {
-    // Volume Docker pour cacher le repo Maven entre les builds (plus rapide)
     MAVEN_VOLUME = 'maven_repo_cache'
   }
 
   options {
-    ansiColor('xterm')
     timestamps()
   }
 
@@ -20,21 +18,18 @@ pipeline {
 
     stage('Detect Java from pom.xml') {
       steps {
-        // Extrait <java.version>…</java.version> via PowerShell
         bat '''
           for /f "usebackq tokens=* delims=" %%A in (`powershell -NoProfile -Command ^
             "$xml = [xml](Get-Content pom.xml); ^
              $v = $xml.project.properties.'java.version'; ^
              if (-not $v) { $v = $xml.project.properties.java_version }; ^
-             if (-not $v) { $v = $xml.project.properties.java; }; ^
+             if (-not $v) { $v = $xml.project.properties.java }; ^
              if (-not $v) { $v = $xml.project.properties.'maven.compiler.release' }; ^
              if (-not $v) { $v = $xml.project.build.plugins.plugin.configuration.release }; ^
              if (-not $v) { $v = '21' }; ^
              Write-Output $v"`) do set JAVA_VERSION=%%A
           echo Detected JAVA_VERSION=%JAVA_VERSION%
         '''
-
-        // Mappe la version Java -> tag Maven officiel
         bat '''
           set "MAVEN_IMAGE="
           if "%JAVA_VERSION%"=="21" set MAVEN_IMAGE=maven:3.9.2-eclipse-temurin-21
@@ -44,7 +39,6 @@ pipeline {
           echo Using MAVEN_IMAGE=%MAVEN_IMAGE%
           echo MAVEN_IMAGE=%MAVEN_IMAGE%> maven_image.env
         '''
-        // Charge MAVEN_IMAGE dans l'env Jenkins
         script {
           def kv = readFile('maven_image.env').trim()
           env.MAVEN_IMAGE = kv.split('=')[1]
@@ -62,7 +56,6 @@ pipeline {
 
     stage('Build (Dockerized Maven)') {
       steps {
-        // Monte le workspace Windows dans /app et un volume pour ~/.m2
         bat """
           docker volume create %MAVEN_VOLUME% 1>nul 2>nul
           docker run --rm ^
@@ -81,7 +74,6 @@ pipeline {
       }
     }
 
-    // (Optionnel) Build Docker image de l'app si un Dockerfile existe
     stage('Docker Build App (optional)') {
       when {
         expression { fileExists('Dockerfile') }
