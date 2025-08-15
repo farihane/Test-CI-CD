@@ -1,4 +1,4 @@
-# Étape 1 : Build (on peut utiliser Maven officiel si besoin)
+# Étape 1 : Build
 FROM eclipse-temurin:21-jdk AS build
 WORKDIR /app
 COPY pom.xml .
