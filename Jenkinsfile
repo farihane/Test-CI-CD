@@ -4,6 +4,7 @@ pipeline {
     stages {
     stage('Call Colab Hello') {
         steps {
+           bat 'pip install requests'
             bat 'python call_colab.py'
         }
     }
