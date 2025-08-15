@@ -11,21 +11,28 @@ pipeline {
         stage('Build with Docker Maven') {
             steps {
                 script {
-                    // Détection de la version Java depuis pom.xml directement dans le conteneur
-                    def javaVersion = bat(
-                        script: 'docker run --rm -v %CD%:/app -w /app maven:3.9.2-eclipse-temurin-21 mvn help:evaluate -Dexpression=java.version -q -DforceStdout',
-                        returnStdout: true
-                    ).trim()
+                    // Image Maven/Java fixe pour éviter les surprises
+                    def mavenImage = "maven:3.9.2-eclipse-temurin-21"
 
-                    if (!javaVersion) { javaVersion = "21" }
+                    echo "Utilisation de l'image Maven : ${mavenImage}"
 
-                    def mavenImage = "maven:3.9.2-eclipse-temurin-${javaVersion}"
-                    echo "Java détecté : ${javaVersion}"
-                    echo "Image Maven : ${mavenImage}"
-
+                    // Pull de l'image
                     bat "docker pull ${mavenImage}"
-                    bat "docker run --rm -v %CD%:/app -w /app ${mavenImage} mvn clean package -DskipTests"
+
+                    // Build du projet avec Maven dans Docker
+                    bat """
+                        docker run --rm ^
+                        -v %CD%:/app ^
+                        -w /app ^
+                        ${mavenImage} mvn clean package -DskipTests
+                    """
                 }
+            }
+        }
+
+        stage('Archive JAR') {
+            steps {
+                archiveArtifacts artifacts: '**/target/*.jar', fingerprint: true
             }
         }
     }
