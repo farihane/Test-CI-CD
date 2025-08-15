@@ -11,8 +11,9 @@ pipeline {
         stage('Build with Docker Maven') {
             steps {
                 script {
+                    // Détection de la version Java depuis pom.xml directement dans le conteneur
                     def javaVersion = bat(
-                        script: 'mvn help:evaluate -Dexpression=java.version -q -DforceStdout',
+                        script: 'docker run --rm -v %CD%:/app -w /app maven:3.9.2-eclipse-temurin-21 mvn help:evaluate -Dexpression=java.version -q -DforceStdout',
                         returnStdout: true
                     ).trim()
 
