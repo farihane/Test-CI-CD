@@ -8,39 +8,17 @@ pipeline {
             }
         }
 
-        stage('Build Maven & Package') {
-            steps {
-                script {
-                    def mavenImage = "maven:3.9.6-eclipse-temurin-21"
-                    bat "docker pull ${mavenImage}"
-                    bat """
-                        docker run --rm ^
-                        -v %CD%:/app ^
-                        -w /app ^
-                        ${mavenImage} mvn clean package -DskipTests
-                    """
-                }
-            }
-        }
-
         stage('Build Docker Image') {
             steps {
-                script {
-                    def imageName = "springboot-demo:latest"
-                    bat "docker build -t ${imageName} ."
-                }
+                bat 'docker build -t springboot-demo:latest .'
             }
         }
 
         stage('Run Application') {
             steps {
-                script {
-                    def containerName = "springboot-demo-container"
-                    bat "docker rm -f ${containerName} || exit 0"
-                    bat "docker run -d -p 8081:8080 --name ${containerName} springboot-demo:latest"
-                }
+                bat 'docker rm -f springboot-demo-container || exit 0'
+                bat 'docker run -d -p 8081:8080 --name springboot-demo-container springboot-demo:latest'
             }
         }
     }
-
 }
