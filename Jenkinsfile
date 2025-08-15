@@ -46,7 +46,7 @@ pipeline {
                     bat "docker rm -f ${containerName} || exit 0"
 
                     // Lancer le conteneur
-                    bat "docker run -d -p 8080:8080 --name ${containerName} springboot-demo:latest"
+                    bat "docker run -d -p 8081:8080 --name ${containerName} springboot-demo:latest"
                 }
             }
         }
