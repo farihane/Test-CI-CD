@@ -8,13 +8,30 @@ pipeline {
             }
         }
 
+        stage('Build Maven & Package') {
+            steps {
+                script {
+                    def mavenImage = "maven:3.9.6-eclipse-temurin-21"
+                    echo "Build Maven avec l'image Docker : ${mavenImage}"
+
+                    bat "docker pull ${mavenImage}"
+
+                    bat """
+                        docker run --rm ^
+                        -v %CD%:/app ^
+                        -w /app ^
+                        ${mavenImage} mvn clean package -DskipTests
+                    """
+                }
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
                 script {
                     def imageName = "springboot-demo:latest"
                     echo "Construction de l'image Docker : ${imageName}"
 
-                    // Dockerfile s'occupe de compiler le projet et créer le JAR
                     bat "docker build -t ${imageName} ."
                 }
             }
@@ -29,7 +46,7 @@ pipeline {
                     bat "docker rm -f ${containerName} || exit 0"
 
                     // Lancer le conteneur
-                    bat "docker run -d -p 8081:8080 --name ${containerName} ${imageName}"
+                    bat "docker run -d -p 8081:8080 --name ${containerName} springboot-demo:latest"
                 }
             }
         }
